@@ -1,9 +1,12 @@
 const std = @import("std");
+const ziro = @import("ziro");
+const aio = ziro.asyncio;
 const utils = @import("./utils.zig");
 const Packet = @import("./packet.zig");
 
 pub const PacketReader = struct {
-    stream: std.net.Stream,
+    // stream: std.net.Stream,
+    stream2: aio.TCP,
     allocator: std.mem.Allocator,
 
     // valid buffer read from network but yet to consume to create packet:
@@ -15,10 +18,11 @@ pub const PacketReader = struct {
     // if in one read, the buffer is filled, we should double the buffer size
     should_double_buf: bool,
 
-    pub fn init(stream: std.net.Stream, allocator: std.mem.Allocator) !PacketReader {
+    pub fn init(stream2: aio.TCP, allocator: std.mem.Allocator) !PacketReader {
         return .{
             .buf = &.{},
-            .stream = stream,
+            // .stream = stream,
+            .stream2 = stream2,
             .allocator = allocator,
             .pos = 0,
             .len = 0,
@@ -64,7 +68,8 @@ pub const PacketReader = struct {
 
     fn readToBufferAtLeast(p: *PacketReader, at_least: usize) !void {
         try p.expandBufIfNeeded(at_least);
-        const n = try p.stream.readAtLeast(p.buf[p.len..], at_least);
+        // const n = try p.stream.readAtLeast(p.buf[p.len..], at_least);
+        const n = try p.stream2.read(.{ .slice = p.buf[p.len..] });
         if (n == 0) {
             return error.UnexpectedEndOfStream;
         }

@@ -1,4 +1,6 @@
 const std = @import("std");
+const ziro = @import("ziro");
+const aio = ziro.asyncio;
 const Config = @import("./config.zig").Config;
 const constants = @import("./constants.zig");
 const auth = @import("./auth.zig");
@@ -31,7 +33,8 @@ const buffer_size: usize = 4096;
 
 pub const Conn = struct {
     connected: bool,
-    stream: std.net.Stream,
+    // stream: std.net.Stream,
+    stream2: aio.TCP,
     reader: PacketReader,
     writer: PacketWriter,
     capabilities: u32,
@@ -43,16 +46,19 @@ pub const Conn = struct {
     // https://dev.mysql.com/doc/dev/mysql-server/latest/page_protocol_connection_phase.html
     pub fn init(allocator: std.mem.Allocator, config: *const Config) !Conn {
         var conn: Conn = blk: {
-            const stream = switch (config.address.any.family) {
-                std.posix.AF.INET, std.posix.AF.INET6 => try std.net.tcpConnectToAddress(config.address),
-                std.posix.AF.UNIX => try std.net.connectUnixSocket(std.mem.span(@as([*:0]const u8, @ptrCast(&config.address.un.path)))),
-                else => unreachable,
-            };
+            // const stream = switch (config.address.any.family) {
+            //     std.posix.AF.INET, std.posix.AF.INET6 => try std.net.tcpConnectToAddress(config.address),
+            //     std.posix.AF.UNIX => try std.net.connectUnixSocket(std.mem.span(@as([*:0]const u8, @ptrCast(&config.address.un.path)))),
+            //     else => unreachable,
+            // };
+            const stream2 = try aio.TCP.init(null, config.address);
+            try stream2.connect(config.address);
             break :blk .{
                 .connected = true,
-                .stream = stream,
-                .reader = try PacketReader.init(stream, allocator),
-                .writer = try PacketWriter.init(stream, allocator),
+                // .stream = stream,
+                .stream2 = stream2,
+                .reader = try PacketReader.init(stream2, allocator),
+                .writer = try PacketWriter.init(stream2, allocator),
                 .capabilities = undefined, // not known until we get the first packet
                 .sequence_id = undefined, // not known until we get the first packet
 
@@ -99,7 +105,7 @@ pub const Conn = struct {
         c.quit() catch |err| {
             std.log.err("Failed to quit: {any}\n", .{err});
         };
-        c.stream.close();
+        // c.stream.close();
         c.reader.deinit();
         c.writer.deinit();
         c.result_meta.deinit(allocator);
@@ -306,7 +312,7 @@ pub const Conn = struct {
         const res = QueryResult.init(packet, c.capabilities) catch |err| {
             switch (err) {
                 error.UnrecoverableError => {
-                    c.stream.close();
+                    // c.stream.close();
                     c.connected = false;
                     return err;
                 },

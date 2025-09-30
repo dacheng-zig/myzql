@@ -1,6 +1,13 @@
 .{
     .name = .myzql,
-    .fingerprint = 0x9af123b5005a4e5d,
     .version = "0.0.0",
+    .fingerprint = 0x9af123b5005a4e5d,
+    .minimum_zig_version = "0.15.1",
+    .dependencies = .{
+        .ziro = .{
+            .url = "git+https://github.com/dacheng-zig/ziro#28b9b4f95106622ba9e92c531c5d4621874f172c",
+            .hash = "ziro-0.0.0-gJN_2Bt9AQAJreKS1cDqWBYyPIlWnJAfSdx3Q44i17We",
+        },
+    },
     .paths = .{""},
 }

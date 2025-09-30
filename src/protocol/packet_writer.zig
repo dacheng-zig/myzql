@@ -1,15 +1,19 @@
 const std = @import("std");
+const ziro = @import("ziro");
+const aio = ziro.asyncio;
 const utils = @import("./utils.zig");
 
 pub const PacketWriter = struct {
     buf: []u8,
     pos: usize, // buf[0..pos]: buffer is written but not flushed
-    stream: std.net.Stream,
+    // stream: std.net.Stream,
+    stream2: aio.TCP,
     allocator: std.mem.Allocator,
 
-    pub fn init(s: std.net.Stream, allocator: std.mem.Allocator) !PacketWriter {
+    pub fn init(stream2: aio.TCP, allocator: std.mem.Allocator) !PacketWriter {
         return .{
-            .stream = s,
+            // .stream = stream,
+            .stream2 = stream2,
             .buf = &.{},
             .pos = 0,
             .allocator = allocator,
@@ -56,7 +60,8 @@ pub const PacketWriter = struct {
 
     // flush the buffer to the stream
     pub inline fn flush(p: *PacketWriter) !void {
-        try p.stream.writeAll(p.buf[0..p.pos]);
+        // try p.stream.writeAll(p.buf[0..p.pos]);
+        _ = try p.stream2.write(.{ .slice = p.buf[0..p.pos] });
         p.pos = 0;
     }
 

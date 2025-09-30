@@ -3,9 +3,14 @@ const std = @import("std");
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
+    
+    const ziro = b.dependency("ziro", .{}).module("ziro");
 
     const myzql = b.addModule("myzql", .{
         .root_source_file = b.path("./src/myzql.zig"),
+        .imports = &.{
+            .{ .name = "ziro", .module = ziro },
+        },
     });
 
     // -Dtest-filter="..."
